@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Ice Climber</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+</head>
+<body>
+  <div id="game-wrapper">
+    <div id="game-container">
+      <div id="ui-overlay">
+        <div id="bet-panel">
+          <h2>PLACE YOUR BET</h2>
+
+          <!-- Bet input row -->
+          <div class="bet-row">
+            <button class="bet-btn" id="btn-half">½</button>
+            <input type="number" id="bet-input" value="10" min="1" step="1" />
+            <button class="bet-btn" id="btn-double">2×</button>
+          </div>
+
+          <!-- Preset chips -->
+          <div class="bet-presets">
+            <button class="preset-btn" data-amount="10">10</button>
+            <button class="preset-btn" data-amount="100">100</button>
+            <button class="preset-btn" data-amount="500">500</button>
+            <button class="preset-btn" id="btn-max">MAX</button>
+          </div>
+
+          <div id="balance-display">Balance: <span id="balance-value">1000</span></div>
+
+          <!-- Difficulty -->
+          <div class="setting-row">
+            <span class="setting-label">DIFFICULTY</span>
+            <div class="toggle-group" id="difficulty-group">
+              <button class="toggle-btn" data-value="easy">EASY</button>
+              <button class="toggle-btn active" data-value="normal">NORMAL</button>
+              <button class="toggle-btn" data-value="hard">HARD</button>
+              <button class="toggle-btn extreme" data-value="extreme">💀 XTR</button>
+            </div>
+          </div>
+
+          <!-- Skin -->
+          <div class="setting-row">
+            <span class="setting-label">THEME</span>
+            <div class="toggle-group" id="skin-group">
+              <button class="toggle-btn active" data-value="default">NIGHT</button>
+              <button class="toggle-btn" data-value="storm">STORM</button>
+              <button class="toggle-btn" data-value="sunset">SUNSET</button>
+            </div>
+          </div>
+
+          <!-- Responsible Gambling -->
+          <details class="rg-section">
+            <summary>⚠ RESPONSIBLE GAMBLING</summary>
+            <div class="rg-body">
+              <div class="rg-row">
+                <label>
+                  <input type="checkbox" id="rg-loss-enabled" />
+                  Loss limit
+                </label>
+                <input type="number" id="rg-loss-value" value="200" min="10" max="10000" class="rg-input" />
+              </div>
+              <div class="rg-row">
+                <label>
+                  <input type="checkbox" id="rg-time-enabled" />
+                  Time limit (min)
+                </label>
+                <input type="number" id="rg-time-value" value="60" min="5" max="480" class="rg-input" />
+              </div>
+            </div>
+          </details>
+
+          <button id="btn-start">START CLIMB</button>
+          <div id="bet-error"></div>
+
+          <!-- Info link -->
+          <div id="info-link">ℹ <span id="open-info">How to play / Paytable</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

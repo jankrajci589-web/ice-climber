@@ -3,9 +3,9 @@ import { CONFIG } from './config.js';
 const MAX_MULTIPLIER = 999999;
 const _cache = new Map();
 
-function _buildTable(inc, difficulty) {
+function _buildTable(inc) {
   const t = [];
-  const lossZone = CONFIG.LOSS_ZONE_MULTIPLIERS[difficulty] || CONFIG.LOSS_ZONE_MULTIPLIERS.normal;
+  const lossZone = CONFIG.LOSS_ZONE_MULTIPLIERS;
   const breakEvenLevel = lossZone.length + 1;
 
   let survival = 1.0;
@@ -19,7 +19,6 @@ function _buildTable(inc, difficulty) {
   for (let i = 1; i <= CONFIG.MAX_LEDGES; i++) {
     const danger = Math.min(CONFIG.STARTING_DANGER + (i - 1) * inc, 0.95);
     survival *= (1 - danger);
-
     if (i < breakEvenLevel) {
       t.push(lossZone[i - 1]);
     } else if (survival < 1e-10) {
@@ -32,9 +31,8 @@ function _buildTable(inc, difficulty) {
   return Object.freeze(t);
 }
 
-export function getMultiplier(level, dangerIncrement, difficulty = 'normal') {
+export function getMultiplier(level, dangerIncrement) {
   if (level < 1 || level > CONFIG.MAX_LEDGES) return 1.0;
-  const cacheKey = `${dangerIncrement}_${difficulty}`;
-  if (!_cache.has(cacheKey)) _cache.set(cacheKey, _buildTable(dangerIncrement, difficulty));
-  return _cache.get(cacheKey)[level - 1];
+  if (!_cache.has(dangerIncrement)) _cache.set(dangerIncrement, _buildTable(dangerIncrement));
+  return _cache.get(dangerIncrement)[level - 1];
 }

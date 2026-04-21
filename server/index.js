@@ -7,14 +7,12 @@ import { getMultiplier } from './math/multiplier.js';
 import { CONFIG } from './math/config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const __root = join(__dirname, '..');
 
 const app = express();
 app.use(express.json());
+app.use(express.static(__root));
 
-// Serve the game frontend from the parent directory
-app.use(express.static(join(__dirname, '..')));
-
-// In-memory store — replace with Redis in production
 const rounds = new Map();
 
 function secureRoll() {
@@ -26,82 +24,48 @@ function getDangerIncrement(difficulty) {
   return CONFIG.DIFFICULTIES[difficulty]?.increment ?? CONFIG.DIFFICULTIES.normal.increment;
 }
 
-// POST /round/start
 app.post('/round/start', (req, res) => {
   const { betAmount, difficulty = 'normal' } = req.body;
-
-  if (!betAmount || betAmount <= 0) {
-    return res.status(400).json({ error: 'Invalid bet amount' });
-  }
-
+  if (!betAmount || betAmount <= 0) return res.status(400).json({ error: 'Invalid bet amount' });
   const serverSeed = randomBytes(32).toString('hex');
   const serverSeedHash = createHash('sha256').update(serverSeed).digest('hex');
   const roundId = randomBytes(16).toString('hex');
   const dangerIncrement = getDangerIncrement(difficulty);
-
-  rounds.set(roundId, {
-    serverSeed,
-    serverSeedHash,
-    betAmount,
-    difficulty,
-    dangerIncrement,
-    level: 0,
-    active: true,
-    cashedOut: false,
-    rolls: [],
-    createdAt: Date.now(),
-  });
-
+  rounds.set(roundId, { serverSeed, serverSeedHash, betAmount, difficulty, dangerIncrement, level: 0, active: true, cashedOut: false, rolls: [], createdAt: Date.now() });
   res.json({ roundId, serverSeedHash });
 });
 
-// POST /round/step
 app.post('/round/step', (req, res) => {
   const { roundId } = req.body;
   const round = rounds.get(roundId);
-
-  if (!round)          return res.status(404).json({ error: 'Round not found' });
-  if (!round.active)   return res.status(400).json({ error: 'Round already ended' });
-
+  if (!round) return res.status(404).json({ error: 'Round not found' });
+  if (!round.active) return res.status(400).json({ error: 'Round already ended' });
   round.level++;
   const roll = secureRoll();
   const { result, danger } = evaluateLedge(round.level, round.dangerIncrement, roll);
   const multiplier = getMultiplier(round.level, round.dangerIncrement);
-
   round.rolls.push({ level: round.level, roll: +roll.toFixed(6), result });
-
-  if (result === 'crack') {
-    round.active = false;
-  }
-
+  if (result === 'crack') round.active = false;
   res.json({ result, level: round.level, multiplier, danger: +danger.toFixed(4) });
 });
 
-// POST /round/cashout
 app.post('/round/cashout', (req, res) => {
   const { roundId } = req.body;
   const round = rounds.get(roundId);
-
-  if (!round)            return res.status(404).json({ error: 'Round not found' });
-  if (!round.active)     return res.status(400).json({ error: 'Round already ended' });
-  if (round.level < 1)   return res.status(400).json({ error: 'No ledges climbed yet' });
-
+  if (!round) return res.status(404).json({ error: 'Round not found' });
+  if (!round.active) return res.status(400).json({ error: 'Round already ended' });
+  if (round.level < 1) return res.status(400).json({ error: 'No ledges climbed yet' });
   round.active = false;
   round.cashedOut = true;
-
   const multiplier = getMultiplier(round.level, round.dangerIncrement);
   const payout = +(round.betAmount * multiplier).toFixed(2);
-
-  res.json({
-    payout,
-    multiplier,
-    level: round.level,
-    serverSeed: round.serverSeed,  // revealed only now for provably fair verification
-    rollHistory: round.rolls,
-  });
+  res.json({ payout, multiplier, level: round.level, serverSeed: round.serverSeed, rollHistory: round.rolls });
 });
 
-// Cleanup rounds older than 30 minutes
+app.get('*', (req, res) => {
+  res.sendFile(join(__root, 'index.html'));
+});
+
 setInterval(() => {
   const cutoff = Date.now() - 30 * 60 * 1000;
   for (const [id, round] of rounds) {
@@ -110,4 +74,4 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Ice Climber server running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Ice Climber server running on port ${PORT}`));
